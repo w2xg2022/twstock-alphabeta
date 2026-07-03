@@ -211,6 +211,14 @@ def main() -> int:
     with open("docs/data/alphabeta.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, separators=(",", ":"))
 
+    csv_fields = ["code", "name", "market", "ticker", "as_of"]
+    for n in WINDOWS:
+        csv_fields += [f"beta{n}", f"alpha{n}", f"er{n}"]
+    with open("docs/data/alphabeta.csv", "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=csv_fields)
+        writer.writeheader()
+        writer.writerows(results)
+
     trajectory_output = {
         "updated_at": output["updated_at"],
         "windows": list(WINDOWS),
@@ -222,7 +230,7 @@ def main() -> int:
     with open("docs/data/trajectory.json", "w", encoding="utf-8") as f:
         json.dump(trajectory_output, f, ensure_ascii=False, separators=(",", ":"))
 
-    print(f"完成，共 {len(results)} 檔寫入 docs/data/alphabeta.json，{len(trajectories)} 檔寫入 docs/data/trajectory.json")
+    print(f"完成，共 {len(results)} 檔寫入 docs/data/alphabeta.json(.csv)，{len(trajectories)} 檔寫入 docs/data/trajectory.json")
     return 0
 
 

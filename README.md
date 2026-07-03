@@ -4,6 +4,8 @@
 
 線上查詢：**https://w2xg2022.github.io/twstock-alphabeta/**
 
+下載當日完整資料（CSV）：**[Releases](https://github.com/w2xg2022/twstock-alphabeta/releases)**，每個交易日發布一份 `alphabeta.csv`（全部個股 60/120/240 日 α、β、E(R)）。
+
 ## 資料說明
 
 - **股票範圍**：證交所公開資訊觀測站上市（`t187ap03_L.csv`）、上櫃（`t187ap03_O.csv`）公司清單
@@ -19,7 +21,7 @@
 
 ```
 scripts/fetch_list.py   抓取上市/上櫃公司清單 -> data/stock_list.csv
-scripts/compute.py      下載股價、計算 alpha/beta -> docs/data/alphabeta.json
+scripts/compute.py      下載股價、計算 alpha/beta -> docs/data/alphabeta.json(.csv)、docs/data/trajectory.json
 docs/                   GitHub Pages 靜態查詢頁面
 .github/workflows/      自動更新排程
 ```
