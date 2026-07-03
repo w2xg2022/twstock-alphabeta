@@ -57,7 +57,13 @@ jobs:
           TAG="data-$DATE"
           DATED_CSV="docs/data/alphabeta_$COMPACT.csv"
           cp docs/data/alphabeta.csv "$DATED_CSV"
-          gh release create "$TAG" \
-            --title "台股 alpha/beta 資料 $DATE" \
-            --notes "全部個股60/120/240日 alpha、beta（含CAPM期望報酬率）。交易日：$DATE" \
-            "$DATED_CSV"
+          NOTES="全部個股60/120/240日 alpha、beta（含CAPM期望報酬率）。交易日：$DATE"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "台股 alpha/beta 資料 $DATE" --notes "$NOTES"
+            gh release upload "$TAG" "$DATED_CSV" --clobber
+          else
+            gh release create "$TAG" \
+              --title "台股 alpha/beta 資料 $DATE" \
+              --notes "$NOTES" \
+              "$DATED_CSV"
+          fi
