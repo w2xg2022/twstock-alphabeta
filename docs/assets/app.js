@@ -192,7 +192,7 @@
     table.classList.remove("hidden");
 
     const frag = document.createDocumentFragment();
-    for (const s of list.slice(0, 200)) {
+    for (const s of list) {
       const tr = document.createElement("tr");
       tr.dataset.code = s.code;
       tr.innerHTML = `
@@ -237,9 +237,9 @@
 
   function applyFilter() {
     const q = searchInput.value.trim().toLowerCase();
-    let list = stocks;
+    let list = chartMarket === "ALL" ? stocks : stocks.filter((s) => s.market === chartMarket);
     if (q) {
-      list = stocks.filter(
+      list = list.filter(
         (s) => s.code.includes(q) || s.name.toLowerCase().includes(q)
       );
     }
@@ -598,6 +598,7 @@
     btn.classList.add("active");
     chartMarket = btn.dataset.market;
     buildChart();
+    applyFilter();
   });
 
   accelToggle.addEventListener("click", (e) => {
