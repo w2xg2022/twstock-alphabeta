@@ -16,6 +16,7 @@
   const topListBody = document.getElementById("top-list-body");
   const topListEmpty = document.getElementById("top-list-empty");
   const topListTable = document.getElementById("top-list-table");
+  const topListTitle = document.getElementById("top-list-title");
 
   let stocks = [];
   let stocksByCode = {};
@@ -348,8 +349,6 @@
     buildTopList();
   }
 
-  const TOP_LIST_WINDOW = "60";
-
   const TOP_LIST_BETA_MAX = 0.5;
 
   function topQuadrantCandidates(bKey, eKey, metric, limit) {
@@ -371,8 +370,9 @@
 
   function buildTopList() {
     if (!topListBody) return;
-    const bKey = `beta${TOP_LIST_WINDOW}`;
-    const aKey = `alpha${TOP_LIST_WINDOW}`;
+    if (topListTitle) topListTitle.textContent = `低β、高α精選股（Top 20，${chartWindow}日）`;
+    const bKey = `beta${chartWindow}`;
+    const aKey = `alpha${chartWindow}`;
 
     const candidates = topQuadrantCandidates(bKey, aKey, "alpha", 20).map((c) => ({
       ...c,
