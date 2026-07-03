@@ -193,6 +193,10 @@
         <td class="${numClass(s.beta240)}">${fmtNum(s.beta240)}</td>
         <td class="${numClass(s.alpha240)}">${fmtNum(s.alpha240)}</td>
       `;
+      tr.addEventListener("click", () => {
+        trajSearch.value = s.code;
+        updateTrajectory();
+      });
       frag.appendChild(tr);
     }
     tbody.appendChild(frag);
@@ -400,7 +404,6 @@
       tr.addEventListener("click", () => {
         trajSearch.value = c.code;
         updateTrajectory();
-        jumpToStock(c.code);
       });
       frag.appendChild(tr);
     });

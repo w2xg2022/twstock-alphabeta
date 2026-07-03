@@ -112,6 +112,7 @@ td:nth-child(1), td:nth-child(2), td:nth-child(3) { text-align: left; }
 th { position: sticky; top: 0; background: var(--bg); cursor: pointer; user-select: none; }
 th:hover { color: var(--accent); }
 tbody tr:hover { background: #f9fafb; }
+#result-table tbody tr { cursor: pointer; }
 
 .pos { color: var(--pos); }
 .neg { color: var(--neg); }
