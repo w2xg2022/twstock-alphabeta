@@ -2,8 +2,9 @@ name: 更新台股 alpha/beta 資料
 
 on:
   schedule:
-    # 台灣時間週二至週六 11:30 = UTC 週一至週五 03:30
-    - cron: "30 3 * * 1-5"
+    # 台灣時間週一至週五 17:30 = UTC 週一至週五 09:30
+    # (交易日13:30收盤後，下午資料就已可靠可用，不用再等隔天早上)
+    - cron: "30 9 * * 1-5"
   workflow_dispatch: {}
 
 permissions:
