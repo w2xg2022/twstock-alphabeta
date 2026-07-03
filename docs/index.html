@@ -53,7 +53,13 @@
   </section>
 
   <section class="chart-section">
-    <h2 class="top-list-title" id="top-list-title">精選股</h2>
+    <div class="chart-controls">
+      <h2 class="top-list-title" id="top-list-title">精選股</h2>
+      <div class="btn-group" id="accel-toggle">
+        <button type="button" data-base="120">vs 120日</button>
+        <button type="button" class="active" data-base="240">vs 240日</button>
+      </div>
+    </div>
     <p class="chart-hint" id="top-list-hint">先篩選 β(60日)≥0 且 &lt;0.5（低系統性風險）、α(60日)&gt;0（近期確實在漲）的個股，再依「α(60日) − α(240日)」由大到小排序——這個值越大代表近期漲勢相對過去一年明顯加速，較接近「剛起漲」而非已經漲多的老多頭股。市場篩選跟隨上方「全部/上市/上櫃」。</p>
     <div class="table-wrap">
       <table id="top-list-table">

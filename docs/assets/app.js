@@ -16,6 +16,8 @@
   const topListEmpty = document.getElementById("top-list-empty");
   const topListTable = document.getElementById("top-list-table");
   const topListTitle = document.getElementById("top-list-title");
+  const topListHint = document.getElementById("top-list-hint");
+  const accelToggle = document.getElementById("accel-toggle");
 
   let stocks = [];
   let stocksByCode = {};
@@ -25,6 +27,7 @@
   let chartMarket = "ALL";
   let chartWindow = "120";
   let chartMetric = "alpha";
+  let accelBase = "240";
   let chart = null;
   let trajChart = null;
   let ranges = {};
@@ -370,12 +373,13 @@
       .slice(0, limit);
   }
 
-  function topAccelCandidates(limit) {
+  function topAccelCandidates(limit, baseWindow) {
+    const baseKey = `alpha${baseWindow}`;
     return stocks
       .filter((s) => (chartMarket === "ALL" || s.market === chartMarket))
       .filter((s) => s.beta60 !== null && s.beta60 !== undefined &&
         s.alpha60 !== null && s.alpha60 !== undefined &&
-        s.alpha240 !== null && s.alpha240 !== undefined)
+        s[baseKey] !== null && s[baseKey] !== undefined)
       .filter((s) => s.beta60 >= 0 && s.beta60 < TOP_LIST_BETA_MAX && s.alpha60 > 0)
       .map((s) => ({
         code: s.code,
@@ -383,7 +387,7 @@
         market: s.market,
         beta: s.beta60,
         alpha: s.alpha60,
-        accel: s.alpha60 - s.alpha240,
+        accel: s.alpha60 - s[baseKey],
       }))
       .sort((a, b) => b.accel - a.accel)
       .slice(0, limit);
@@ -392,8 +396,11 @@
   function buildTopList() {
     if (!topListBody) return;
     if (topListTitle) topListTitle.textContent = "精選股";
+    if (topListHint) {
+      topListHint.textContent = `先篩選 β(60日)≥0 且 <0.5（低系統性風險）、α(60日)>0（近期確實在漲）的個股，再依「α(60日) − α(${accelBase}日)」由大到小排序——這個值越大代表近期漲勢相對過去${accelBase === "240" ? "一年" : "半年"}明顯加速，較接近「剛起漲」而非已經漲多的老多頭股。市場篩選跟隨上方「全部/上市/上櫃」。`;
+    }
 
-    const candidates = topAccelCandidates(30);
+    const candidates = topAccelCandidates(30, accelBase);
 
     topListBody.innerHTML = "";
     if (candidates.length === 0) {
@@ -570,6 +577,15 @@
     btn.classList.add("active");
     chartMarket = btn.dataset.market;
     buildChart();
+  });
+
+  accelToggle.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-base]");
+    if (!btn) return;
+    accelToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    accelBase = btn.dataset.base;
+    buildTopList();
   });
 
   windowToggle.addEventListener("click", (e) => {
