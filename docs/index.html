@@ -44,17 +44,12 @@
     <div class="chart-controls">
       <input id="traj-search" type="text" placeholder="輸入股票代號查看走勢，例如 2330" autocomplete="off" value="2330">
       <span class="traj-title" id="traj-title">台積電 (2330)</span>
-      <div class="btn-group" id="traj-window-toggle">
-        <button type="button" data-window="60">60日</button>
-        <button type="button" class="active" data-window="120">120日</button>
-        <button type="button" data-window="240">240日</button>
-      </div>
       <button type="button" id="traj-reset-zoom" class="reset-zoom-btn">重置縮放</button>
     </div>
     <div class="chart-wrap">
       <canvas id="traj-chart" height="320"></canvas>
     </div>
-    <p class="chart-hint" id="traj-hint">與上方相同座標系（橫軸β、縱軸E(R)）。淺色小點是最近60個交易日、每日的實際位置；橘色粗箭頭是每週（5個交易日）取樣的大方向趨勢。滑鼠滾輪可縮放、拖曳可平移，按「重置縮放」還原。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。</p>
+    <p class="chart-hint" id="traj-hint">天數窗口跟隨上方主圖的60/120/240日切換。與上方相同座標系（橫軸β、縱軸E(R)）。淺色小點是最近60個交易日、每日的實際位置；橘色粗箭頭是每週（5個交易日）取樣的大方向趨勢。滑鼠滾輪可縮放、拖曳可平移，按「重置縮放」還原。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。</p>
   </section>
 
   <section class="chart-section">

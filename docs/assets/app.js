@@ -8,7 +8,6 @@
   const windowToggle = document.getElementById("window-toggle");
   const trajSearch = document.getElementById("traj-search");
   const trajTitle = document.getElementById("traj-title");
-  const trajWindowToggle = document.getElementById("traj-window-toggle");
   const metricToggle = document.getElementById("metric-toggle");
   const chartHint = document.getElementById("chart-hint");
   const trajHint = document.getElementById("traj-hint");
@@ -26,7 +25,6 @@
   let chartMarket = "ALL";
   let chartWindow = "120";
   let chartMetric = "alpha";
-  let trajWindow = "120";
   let chart = null;
   let trajChart = null;
   let ranges = {};
@@ -426,8 +424,8 @@
     trajChart = null;
     if (!traj) return;
 
-    const bArr = traj[`beta${trajWindow}`] || [];
-    const eArr = traj[`${chartMetric}${trajWindow}`] || [];
+    const bArr = traj[`beta${chartWindow}`] || [];
+    const eArr = traj[`${chartMetric}${chartWindow}`] || [];
     const metricLabel = chartMetric === "er" ? "E(R)" : "α";
     const points = [];
     for (let i = 0; i < bArr.length; i++) {
@@ -447,8 +445,8 @@
     const weekly = sampleWeekly(points, 5);
     const weeklyTotal = weekly.length;
 
-    const baseXRange = ranges[`beta${trajWindow}`];
-    const baseYRange = ranges[`${chartMetric}${trajWindow}`];
+    const baseXRange = ranges[`beta${chartWindow}`];
+    const baseYRange = ranges[`${chartMetric}${chartWindow}`];
     const xRange = baseXRange ? extendRange(baseXRange, bArr) : undefined;
     const yRange = baseYRange ? extendRange(baseYRange, eArr) : undefined;
 
@@ -457,7 +455,7 @@
       data: {
         datasets: [
           {
-            label: `每日實際位置 (${trajWindow}日)`,
+            label: `每日實際位置 (${chartWindow}日)`,
             data: points,
             showLine: false,
             pointBackgroundColor: pointColors,
@@ -548,15 +546,6 @@
     if (trajChart && trajChart.resetZoom) trajChart.resetZoom();
   });
 
-  trajWindowToggle.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-window]");
-    if (!btn) return;
-    trajWindowToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    trajWindow = btn.dataset.window;
-    updateTrajectory();
-  });
-
   marketToggle.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-market]");
     if (!btn) return;
@@ -572,7 +561,7 @@
     windowToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     chartWindow = btn.dataset.window;
-    buildChart();
+    updateTrajectory();
   });
 
   metricToggle.addEventListener("click", (e) => {
