@@ -4,16 +4,20 @@ import csv
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
+import requests
 import yfinance as yf
 
 WINDOWS = (60, 120, 240)
 PERIOD = "18mo"  # 240個交易日約需11~12個月，多留緩衝
 CHUNK_SIZE = 100
-BENCHMARKS = {"TWSE": "^TWII", "OTC": "^TWOII"}
+# 大盤基準改用FinMind(TaiwanStockPrice)，因為yfinance的^TWII/^TWOII指數資料常常落後或不完整
+# (實測^TWOII常卡在好幾天前，個股本身資料是新的)；個股價格仍用yfinance還原價
+BENCHMARKS = {"TWSE": "TAIEX", "OTC": "TPEx"}
+FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
 ANNUALIZE_DAYS = 252
 RISK_FREE_RATE = 0.015  # 約略無風險利率，CAPM期望報酬率用
 
@@ -55,6 +59,30 @@ def fetch_close(tickers: list[str], retries: int = 3) -> pd.DataFrame:
             time.sleep(3 * (attempt + 1))
     print(f"警告: 批次下載失敗 {tickers[:3]}...: {last_err}", file=sys.stderr)
     return pd.DataFrame()
+
+
+def fetch_finmind_index(data_id: str, start_date: str, retries: int = 3) -> pd.Series:
+    """從FinMind抓大盤指數收盤價(TAIEX=加權指數, TPEx=櫃買指數)，回傳Series(index=date)"""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            resp = requests.get(
+                FINMIND_URL,
+                params={"dataset": "TaiwanStockPrice", "data_id": data_id, "start_date": start_date},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+            if not data:
+                raise RuntimeError("FinMind回傳無資料")
+            df = pd.DataFrame(data)
+            df["date"] = pd.to_datetime(df["date"])
+            return df.set_index("date")["close"].sort_index()
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            time.sleep(3 * (attempt + 1))
+    print(f"警告: FinMind下載失敗 {data_id}: {last_err}", file=sys.stderr)
+    return pd.Series(dtype=float)
 
 
 def chunked(seq: list, size: int):
@@ -133,18 +161,19 @@ def main() -> int:
         print("data/stock_list.csv 是空的，先跑 fetch_list.py", file=sys.stderr)
         return 1
 
-    print("下載大盤基準資料...")
-    bench_close = fetch_close(list(BENCHMARKS.values()))
+    print("下載大盤基準資料(FinMind)...")
+    start_date = (datetime.now(timezone.utc) - timedelta(days=560)).strftime("%Y-%m-%d")
     bench_ret = {}
     trajectory_dates = {}
-    for market, bt in BENCHMARKS.items():
-        if bt in bench_close.columns:
-            bench_ret[market] = bench_close[bt].dropna()
-            bench_ret_series = bench_ret[market].pct_change().dropna()
+    for market, data_id in BENCHMARKS.items():
+        series = fetch_finmind_index(data_id, start_date)
+        if not series.empty:
+            bench_ret[market] = series
+            bench_ret_series = series.pct_change().dropna()
             tail = bench_ret_series.index[-TRAJECTORY_POINTS:]
             trajectory_dates[market] = [d.strftime("%Y-%m-%d") for d in tail]
         else:
-            print(f"警告: 大盤基準 {bt} 下載失敗", file=sys.stderr)
+            print(f"警告: 大盤基準 {data_id} 下載失敗", file=sys.stderr)
             bench_ret[market] = pd.Series(dtype=float)
             trajectory_dates[market] = []
 
