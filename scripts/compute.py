@@ -74,11 +74,12 @@ def regress(stock_ret: np.ndarray, mkt_ret: np.ndarray, n: int):
     return round(float(beta), 4), round(float(alpha_annual), 4)
 
 
-def beta_of(s_win: np.ndarray, m_win: np.ndarray):
+def regress_point(s_win: np.ndarray, m_win: np.ndarray):
     if len(s_win) < 2 or len(m_win) < 2 or np.std(m_win) == 0:
-        return None
-    beta, _ = np.polyfit(m_win, s_win, 1)
-    return round(float(beta), 4)
+        return None, None
+    beta, alpha_daily = np.polyfit(m_win, s_win, 1)
+    alpha_annual = alpha_daily * ANNUALIZE_DAYS
+    return round(float(beta), 4), round(float(alpha_annual), 4)
 
 
 def expected_return(beta, m_win: np.ndarray):
@@ -101,23 +102,27 @@ def compute_trajectory(s_ret: np.ndarray, m_ret: np.ndarray):
     traj = {}
     has_any = False
     for n in WINDOWS:
-        betas, ers = [], []
+        betas, alphas, ers = [], [], []
         for idx in anchors:
             if idx < n:
                 betas.append(None)
+                alphas.append(None)
                 ers.append(None)
                 continue
             s_win = s_ret[idx - n:idx]
             m_win = m_ret[idx - n:idx]
-            beta = beta_of(s_win, m_win)
+            beta, alpha = regress_point(s_win, m_win)
             betas.append(beta)
+            alphas.append(alpha)
             ers.append(expected_return(beta, m_win))
             has_any = has_any or beta is not None
         pad = TRAJECTORY_POINTS - len(betas)
         if pad > 0:
             betas = [None] * pad + betas
+            alphas = [None] * pad + alphas
             ers = [None] * pad + ers
         traj[f"beta{n}"] = betas
+        traj[f"alpha{n}"] = alphas
         traj[f"er{n}"] = ers
     return traj if has_any else None
 

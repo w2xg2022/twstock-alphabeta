@@ -11,6 +11,7 @@
   const trajWindowToggle = document.getElementById("traj-window-toggle");
   const metricToggle = document.getElementById("metric-toggle");
   const chartHint = document.getElementById("chart-hint");
+  const trajHint = document.getElementById("traj-hint");
   const trajResetZoom = document.getElementById("traj-reset-zoom");
 
   let stocks = [];
@@ -28,6 +29,24 @@
   let riskFreeRate = 0.015;
 
   const METRIC_LABEL = { er: "E(R) (CAPM年化期望報酬率)", alpha: "α (年化超額報酬)" };
+
+  function metricRefLine(metric) {
+    return metric === "alpha"
+      ? [{ value: 0, color: "#374151", width: 2, label: "α=0" }]
+      : [{ value: riskFreeRate, color: "#9ca3af", width: 1, dash: [4, 4], label: "Rf" }];
+  }
+
+  function extendRange(range, values) {
+    const present = values.filter((v) => v !== null && v !== undefined);
+    if (!present.length) return range;
+    const dataMin = Math.min(...present);
+    const dataMax = Math.max(...present);
+    const min = Math.min(range.min, dataMin);
+    const max = Math.max(range.max, dataMax);
+    if (min === range.min && max === range.max) return range;
+    const pad = (max - min) * 0.06;
+    return { min: min - pad, max: max + pad };
+  }
 
   function percentile(sorted, p) {
     const idx = (sorted.length - 1) * p;
@@ -270,9 +289,7 @@
 
     const xRange = ranges[bKey];
     const yRange = ranges[eKey];
-    const refHorizontal = chartMetric === "alpha"
-      ? [{ value: 0, color: "#374151", width: 2, label: "α=0" }]
-      : [{ value: riskFreeRate, color: "#9ca3af", width: 1, dash: [4, 4], label: "Rf" }];
+    const refHorizontal = metricRefLine(chartMetric);
 
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
@@ -341,7 +358,8 @@
     if (!traj) return;
 
     const bArr = traj[`beta${trajWindow}`] || [];
-    const eArr = traj[`er${trajWindow}`] || [];
+    const eArr = traj[`${chartMetric}${trajWindow}`] || [];
+    const metricLabel = chartMetric === "er" ? "E(R)" : "α";
     const points = [];
     for (let i = 0; i < bArr.length; i++) {
       if (bArr[i] !== null && bArr[i] !== undefined && eArr[i] !== null && eArr[i] !== undefined) {
@@ -360,8 +378,10 @@
     const weekly = sampleWeekly(points, 5);
     const weeklyTotal = weekly.length;
 
-    const xRange = ranges[`beta${trajWindow}`];
-    const yRange = ranges[`er${trajWindow}`];
+    const baseXRange = ranges[`beta${trajWindow}`];
+    const baseYRange = ranges[`${chartMetric}${trajWindow}`];
+    const xRange = baseXRange ? extendRange(baseXRange, bArr) : undefined;
+    const yRange = baseYRange ? extendRange(baseYRange, eArr) : undefined;
 
     trajChart = new Chart(ctx, {
       type: "scatter",
@@ -399,13 +419,13 @@
             ...(xRange ? { min: xRange.min, max: xRange.max } : {}),
           },
           y: {
-            title: { display: true, text: "E(R) (CAPM年化期望報酬率)" },
+            title: { display: true, text: METRIC_LABEL[chartMetric] },
             ...(yRange ? { min: yRange.min, max: yRange.max } : {}),
           },
         },
         refLines: {
           vertical: [{ value: 1, color: "#374151", width: 2, label: "β=1" }],
-          horizontal: [{ value: riskFreeRate, color: "#9ca3af", width: 1, dash: [4, 4], label: "Rf" }],
+          horizontal: metricRefLine(chartMetric),
         },
         plugins: {
           legend: { display: false },
@@ -414,7 +434,7 @@
               label: (item) => {
                 const isWeekly = item.datasetIndex === 1;
                 const isLast = isWeekly && item.dataIndex === weeklyTotal - 1;
-                return `${isLast ? "最新 " : ""}${isWeekly ? "週" : ""}β=${item.raw.x.toFixed(2)}  E(R)=${item.raw.y.toFixed(2)}`;
+                return `${isLast ? "最新 " : ""}${isWeekly ? "週" : ""}β=${item.raw.x.toFixed(2)}  ${metricLabel}=${item.raw.y.toFixed(2)}`;
               },
             },
           },
@@ -436,10 +456,16 @@
     });
   }
 
+  function updateTrajectoryHint() {
+    const metricLabel = chartMetric === "er" ? "E(R)" : "α";
+    trajHint.textContent = `與上方相同座標系（橫軸β、縱軸${metricLabel}）。淺色小點是最近60個交易日、每日的實際位置；橘色粗箭頭是每週（5個交易日）取樣的大方向趨勢。滑鼠滾輪可縮放、拖曳可平移，按「重置縮放」還原。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。`;
+  }
+
   function updateTrajectory() {
     const code = trajSearch.value.trim();
     const info = stocksByCode[code];
     trajTitle.textContent = info ? `${info.name} (${code})` : code ? "找不到此代號" : "";
+    updateTrajectoryHint();
     buildTrajectoryChart(code);
     buildChart();
   }
@@ -490,6 +516,7 @@
       ? "橫軸為β（系統性風險）、縱軸為E(R)（CAPM年化期望報酬率）。點一下圖上的點可跳到下方表格查看該股。"
       : "橫軸為β（系統性風險）、縱軸為α（年化超額報酬）。點一下圖上的點可跳到下方表格查看該股。";
     buildChart();
+    updateTrajectory();
   });
 
   Promise.all([
