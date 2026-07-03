@@ -13,6 +13,9 @@
   const chartHint = document.getElementById("chart-hint");
   const trajHint = document.getElementById("traj-hint");
   const trajResetZoom = document.getElementById("traj-reset-zoom");
+  const topListBody = document.getElementById("top-list-body");
+  const topListEmpty = document.getElementById("top-list-empty");
+  const topListTable = document.getElementById("top-list-table");
 
   let stocks = [];
   let stocksByCode = {};
@@ -338,6 +341,60 @@
       },
       plugins: [refLinePlugin],
     });
+
+    buildTopList();
+  }
+
+  const TOP_LIST_WINDOW = "60";
+
+  function buildTopList() {
+    if (!topListBody) return;
+    const bKey = `beta${TOP_LIST_WINDOW}`;
+    const aKey = `alpha${TOP_LIST_WINDOW}`;
+
+    const candidates = stocks
+      .filter((s) => (chartMarket === "ALL" || s.market === chartMarket))
+      .filter((s) => s[bKey] !== null && s[bKey] !== undefined && s[aKey] !== null && s[aKey] !== undefined)
+      .filter((s) => s[bKey] >= 0 && s[bKey] < 1 && s[aKey] > 0)
+      .map((s) => ({
+        code: s.code,
+        name: s.name,
+        market: s.market,
+        beta: s[bKey],
+        alpha: s[aKey],
+        dist: Math.hypot(1 - s[bKey], s[aKey]),
+      }))
+      .sort((a, b) => b.dist - a.dist)
+      .slice(0, 20);
+
+    topListBody.innerHTML = "";
+    if (candidates.length === 0) {
+      topListEmpty.classList.remove("hidden");
+      topListTable.classList.add("hidden");
+      return;
+    }
+    topListEmpty.classList.add("hidden");
+    topListTable.classList.remove("hidden");
+
+    const frag = document.createDocumentFragment();
+    candidates.forEach((c, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${c.code}</td>
+        <td>${c.name}</td>
+        <td>${c.market === "TWSE" ? "上市" : "上櫃"}</td>
+        <td class="${numClass(c.beta)}">${fmtNum(c.beta)}</td>
+        <td class="${numClass(c.alpha)}">${fmtNum(c.alpha)}</td>
+      `;
+      tr.addEventListener("click", () => {
+        trajSearch.value = c.code;
+        updateTrajectory();
+        jumpToStock(c.code);
+      });
+      frag.appendChild(tr);
+    });
+    topListBody.appendChild(frag);
   }
 
   function sampleWeekly(points, step) {
