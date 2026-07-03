@@ -24,8 +24,79 @@
   let trajWindow = "120";
   let chart = null;
   let trajChart = null;
+  let ranges = {};
+  let riskFreeRate = 0.015;
 
   const METRIC_LABEL = { er: "E(R) (CAPM年化期望報酬率)", alpha: "α (年化超額報酬)" };
+
+  function percentile(sorted, p) {
+    const idx = (sorted.length - 1) * p;
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  }
+
+  function computeRanges() {
+    const result = {};
+    for (const n of [60, 120, 240]) {
+      for (const metric of ["beta", "alpha", "er"]) {
+        const key = `${metric}${n}`;
+        const vals = stocks.map((s) => s[key]).filter((v) => v !== null && v !== undefined).sort((a, b) => a - b);
+        if (!vals.length) continue;
+        let min = percentile(vals, 0.02);
+        let max = percentile(vals, 0.98);
+        const anchor = metric === "beta" ? 1 : metric === "alpha" ? 0 : riskFreeRate;
+        min = Math.min(min, anchor);
+        max = Math.max(max, anchor);
+        const pad = (max - min) * 0.06 || 0.1;
+        result[key] = { min: min - pad, max: max + pad };
+      }
+    }
+    return result;
+  }
+
+  const refLinePlugin = {
+    id: "refLinePlugin",
+    afterDraw(c) {
+      const opts = c.config.options.refLines;
+      if (!opts) return;
+      const { ctx, chartArea, scales } = c;
+      ctx.save();
+      ctx.font = "11px sans-serif";
+      (opts.vertical || []).forEach((v) => {
+        const x = scales.x.getPixelForValue(v.value);
+        if (x < chartArea.left || x > chartArea.right) return;
+        ctx.strokeStyle = v.color;
+        ctx.lineWidth = v.width || 1;
+        ctx.setLineDash(v.dash || []);
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        if (v.label) {
+          ctx.fillStyle = v.color;
+          ctx.fillText(v.label, x + 4, chartArea.top + 12);
+        }
+      });
+      (opts.horizontal || []).forEach((h) => {
+        const y = scales.y.getPixelForValue(h.value);
+        if (y < chartArea.top || y > chartArea.bottom) return;
+        ctx.strokeStyle = h.color;
+        ctx.lineWidth = h.width || 1;
+        ctx.setLineDash(h.dash || []);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        if (h.label) {
+          ctx.fillStyle = h.color;
+          ctx.fillText(h.label, chartArea.left + 4, y - 4);
+        }
+      });
+      ctx.restore();
+    },
+  };
 
   const NUM_KEYS = ["beta60", "alpha60", "beta120", "alpha120", "beta240", "alpha240"];
 
@@ -197,6 +268,12 @@
       });
     }
 
+    const xRange = ranges[bKey];
+    const yRange = ranges[eKey];
+    const refHorizontal = chartMetric === "alpha"
+      ? [{ value: 0, color: "#374151", width: 2, label: "α=0" }]
+      : [{ value: riskFreeRate, color: "#9ca3af", width: 1, dash: [4, 4], label: "Rf" }];
+
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
       type: "scatter",
@@ -206,8 +283,18 @@
         maintainAspectRatio: false,
         parsing: false,
         scales: {
-          x: { title: { display: true, text: "β (系統性風險)" } },
-          y: { title: { display: true, text: METRIC_LABEL[chartMetric] } },
+          x: {
+            title: { display: true, text: "β (系統性風險)" },
+            ...(xRange ? { min: xRange.min, max: xRange.max } : {}),
+          },
+          y: {
+            title: { display: true, text: METRIC_LABEL[chartMetric] },
+            ...(yRange ? { min: yRange.min, max: yRange.max } : {}),
+          },
+        },
+        refLines: {
+          vertical: [{ value: 1, color: "#374151", width: 2, label: "β=1" }],
+          horizontal: refHorizontal,
         },
         plugins: {
           legend: { display: false },
@@ -232,6 +319,7 @@
           evt.native.target.style.cursor = elements.length ? "pointer" : "default";
         },
       },
+      plugins: [refLinePlugin],
     });
   }
 
@@ -272,6 +360,9 @@
     const weekly = sampleWeekly(points, 5);
     const weeklyTotal = weekly.length;
 
+    const xRange = ranges[`beta${trajWindow}`];
+    const yRange = ranges[`er${trajWindow}`];
+
     trajChart = new Chart(ctx, {
       type: "scatter",
       data: {
@@ -303,8 +394,18 @@
         maintainAspectRatio: false,
         parsing: false,
         scales: {
-          x: { title: { display: true, text: "β (系統性風險)" } },
-          y: { title: { display: true, text: "E(R) (CAPM年化期望報酬率)" } },
+          x: {
+            title: { display: true, text: "β (系統性風險)" },
+            ...(xRange ? { min: xRange.min, max: xRange.max } : {}),
+          },
+          y: {
+            title: { display: true, text: "E(R) (CAPM年化期望報酬率)" },
+            ...(yRange ? { min: yRange.min, max: yRange.max } : {}),
+          },
+        },
+        refLines: {
+          vertical: [{ value: 1, color: "#374151", width: 2, label: "β=1" }],
+          horizontal: [{ value: riskFreeRate, color: "#9ca3af", width: 1, dash: [4, 4], label: "Rf" }],
         },
         plugins: {
           legend: { display: false },
@@ -318,6 +419,10 @@
             },
           },
           zoom: {
+            limits: {
+              x: { min: "original", max: "original" },
+              y: { min: "original", max: "original" },
+            },
             pan: { enabled: true, mode: "xy" },
             zoom: {
               wheel: { enabled: true },
@@ -327,7 +432,7 @@
           },
         },
       },
-      plugins: [arrowPlugin],
+      plugins: [arrowPlugin, refLinePlugin],
     });
   }
 
@@ -395,6 +500,8 @@
       stocks = data.stocks || [];
       stocksByCode = Object.fromEntries(stocks.map((s) => [s.code, s]));
       trajectoryData = trajData;
+      if (trajData && trajData.risk_free_rate !== undefined) riskFreeRate = trajData.risk_free_rate;
+      ranges = computeRanges();
       metaEl.textContent = `共 ${data.count} 檔，更新時間：${data.updated_at}（UTC）`;
       applyFilter();
       buildChart();

@@ -200,8 +200,11 @@ def main() -> int:
 
         time.sleep(1.5)
 
+    data_date = max((r["as_of"] for r in results), default="")
+
     output = {
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "data_date": data_date,
         "windows": list(WINDOWS),
         "benchmarks": BENCHMARKS,
         "count": len(results),

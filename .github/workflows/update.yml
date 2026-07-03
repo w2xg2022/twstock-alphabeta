@@ -28,20 +28,31 @@ jobs:
       - name: 計算 alpha/beta
         run: python scripts/compute.py
 
+      - name: 取得資料對應的交易日
+        id: data_date
+        run: |
+          DATA_DATE=$(python3 -c "import json;print(json.load(open('docs/data/alphabeta.json'))['data_date'])")
+          echo "date=$DATA_DATE" >> "$GITHUB_OUTPUT"
+          echo "compact=${DATA_DATE//-/}" >> "$GITHUB_OUTPUT"
+
       - name: 提交並推送變更
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/stock_list.csv docs/data/alphabeta.json docs/data/alphabeta.csv docs/data/trajectory.json
-          git diff --cached --quiet || git commit -m "chore: 自動更新 alpha/beta 資料 $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "chore: 自動更新 alpha/beta 資料 ${{ steps.data_date.outputs.date }}"
           git push
 
       - name: 發布當日 Release（alpha/beta CSV）
         env:
           GH_TOKEN: ${{ github.token }}
+          DATE: ${{ steps.data_date.outputs.date }}
+          COMPACT: ${{ steps.data_date.outputs.compact }}
         run: |
-          TAG="data-$(date -u +%Y-%m-%d)"
+          TAG="data-$DATE"
+          DATED_CSV="docs/data/alphabeta_$COMPACT.csv"
+          cp docs/data/alphabeta.csv "$DATED_CSV"
           gh release create "$TAG" \
-            --title "台股 alpha/beta 資料 $(date -u +%Y-%m-%d)" \
-            --notes "全部個股60/120/240日 alpha、beta（含CAPM期望報酬率）。更新時間（UTC）：$(date -u +%Y-%m-%dT%H:%M:%S)" \
-            docs/data/alphabeta.csv
+            --title "台股 alpha/beta 資料 $DATE" \
+            --notes "全部個股60/120/240日 alpha、beta（含CAPM期望報酬率）。交易日：$DATE" \
+            "$DATED_CSV"
