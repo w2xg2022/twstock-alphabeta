@@ -8,7 +8,10 @@
 </head>
 <body>
 <header>
-  <h1>台股 Alpha / Beta 查詢</h1>
+  <div class="header-top">
+    <h1>台股 Alpha / Beta 查詢</h1>
+    <a class="gh-link" href="https://github.com/w2xg2022/twstock-alphabeta" target="_blank" rel="noopener">GitHub 原始碼</a>
+  </div>
   <p class="sub">資料源：Yahoo Finance（yfinance），採還原權息價計算；基準指數：上市 ^TWII、上櫃 ^TWOII</p>
   <p class="meta" id="meta">載入中...</p>
 </header>
@@ -46,11 +49,12 @@
         <button type="button" class="active" data-window="120">120日</button>
         <button type="button" data-window="240">240日</button>
       </div>
+      <button type="button" id="traj-reset-zoom" class="reset-zoom-btn">重置縮放</button>
     </div>
     <div class="chart-wrap">
       <canvas id="traj-chart" height="320"></canvas>
     </div>
-    <p class="chart-hint">與上方相同座標系（橫軸β、縱軸E(R)）。呈現該股最近60個交易日、每日的β/E(R)位置變化，顏色由淺到深代表時間由舊到新，最新一點特別放大。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。</p>
+    <p class="chart-hint">與上方相同座標系（橫軸β、縱軸E(R)）。淺色小點是最近60個交易日、每日的實際位置；橘色粗箭頭是每週（5個交易日）取樣的大方向趨勢。滑鼠滾輪可縮放、拖曳可平移，按「重置縮放」還原。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。</p>
   </section>
 
   <input id="search" type="text" placeholder="輸入股票代號或名稱，例如 2330 或 台積電" autocomplete="off">
@@ -80,6 +84,7 @@
 </footer>
 
 <script src="assets/chart.umd.min.js"></script>
+<script src="assets/chartjs-plugin-zoom.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

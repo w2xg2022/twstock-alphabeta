@@ -26,6 +26,10 @@ h1 { margin: 0 0 6px; font-size: 22px; }
 .sub { margin: 0; color: var(--muted); font-size: 13px; }
 .meta { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
 
+.header-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.gh-link { font-size: 13px; color: var(--accent); text-decoration: none; }
+.gh-link:hover { text-decoration: underline; }
+
 main { padding: 20px; max-width: 1000px; margin: 0 auto; }
 
 .chart-section { margin-bottom: 24px; }
@@ -73,6 +77,17 @@ main { padding: 20px; max-width: 1000px; margin: 0 auto; }
 #traj-search:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
 
 .traj-title { font-size: 13px; color: var(--muted); margin-right: auto; }
+
+.reset-zoom-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.reset-zoom-btn:hover { border-color: var(--accent); }
 
 #search {
   width: 100%;

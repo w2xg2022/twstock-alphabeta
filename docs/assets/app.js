@@ -11,6 +11,7 @@
   const trajWindowToggle = document.getElementById("traj-window-toggle");
   const metricToggle = document.getElementById("metric-toggle");
   const chartHint = document.getElementById("chart-hint");
+  const trajResetZoom = document.getElementById("traj-reset-zoom");
 
   let stocks = [];
   let stocksByCode = {};
@@ -234,6 +235,14 @@
     });
   }
 
+  function sampleWeekly(points, step) {
+    const result = [];
+    for (let i = 0; i < points.length; i += step) result.push(points[i]);
+    const last = points[points.length - 1];
+    if (result[result.length - 1] !== last) result.push(last);
+    return result;
+  }
+
   function buildTrajectoryChart(code) {
     const ctx = document.getElementById("traj-chart");
     if (!ctx || typeof Chart === "undefined") return;
@@ -256,24 +265,38 @@
     const total = points.length;
     const pointColors = points.map((_, i) => {
       const t = total > 1 ? i / (total - 1) : 1;
-      const alpha = 0.2 + 0.7 * t;
-      return `rgba(15, 118, 110, ${alpha.toFixed(2)})`;
+      const alpha = 0.15 + 0.35 * t;
+      return `rgba(107, 114, 128, ${alpha.toFixed(2)})`;
     });
-    const pointRadii = points.map((_, i) => (i === total - 1 ? 7 : 3));
+
+    const weekly = sampleWeekly(points, 5);
+    const weeklyTotal = weekly.length;
 
     trajChart = new Chart(ctx, {
       type: "scatter",
       data: {
-        datasets: [{
-          label: `β/E(R) 軌跡 (${trajWindow}日)`,
-          data: points,
-          showLine: true,
-          borderColor: "rgba(15, 118, 110, 0.35)",
-          pointBackgroundColor: pointColors,
-          pointBorderColor: pointColors,
-          pointRadius: pointRadii,
-          pointHoverRadius: 8,
-        }],
+        datasets: [
+          {
+            label: `每日實際位置 (${trajWindow}日)`,
+            data: points,
+            showLine: false,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: pointColors,
+            pointRadius: 2.5,
+            pointHoverRadius: 6,
+          },
+          {
+            label: "每週大方向",
+            data: weekly,
+            showLine: true,
+            borderColor: "#d97706",
+            borderWidth: 2.5,
+            pointBackgroundColor: "#d97706",
+            pointBorderColor: "#92400e",
+            pointRadius: (ctx2) => (ctx2.dataIndex === weeklyTotal - 1 ? 7 : 4),
+            pointHoverRadius: 9,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -288,10 +311,18 @@
           tooltip: {
             callbacks: {
               label: (item) => {
-                const i = item.dataIndex;
-                const isLast = i === total - 1;
-                return `${isLast ? "最新 " : ""}β=${item.raw.x.toFixed(2)}  E(R)=${item.raw.y.toFixed(2)}`;
+                const isWeekly = item.datasetIndex === 1;
+                const isLast = isWeekly && item.dataIndex === weeklyTotal - 1;
+                return `${isLast ? "最新 " : ""}${isWeekly ? "週" : ""}β=${item.raw.x.toFixed(2)}  E(R)=${item.raw.y.toFixed(2)}`;
               },
+            },
+          },
+          zoom: {
+            pan: { enabled: true, mode: "xy" },
+            zoom: {
+              wheel: { enabled: true },
+              pinch: { enabled: true },
+              mode: "xy",
             },
           },
         },
@@ -311,6 +342,10 @@
   trajSearch.addEventListener("input", () => {
     clearTimeout(trajSearch._t);
     trajSearch._t = setTimeout(updateTrajectory, 300);
+  });
+
+  trajResetZoom.addEventListener("click", () => {
+    if (trajChart && trajChart.resetZoom) trajChart.resetZoom();
   });
 
   trajWindowToggle.addEventListener("click", (e) => {
