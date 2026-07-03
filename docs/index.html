@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台股 Alpha / Beta 查詢</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header>
+  <h1>台股 Alpha / Beta 查詢</h1>
+  <p class="sub">資料源：Yahoo Finance（yfinance），採還原權息價計算；基準指數：上市 ^TWII、上櫃 ^TWOII</p>
+  <p class="meta" id="meta">載入中...</p>
+</header>
+
+<main>
+  <section class="chart-section">
+    <div class="chart-controls">
+      <div class="btn-group" id="market-toggle">
+        <button type="button" class="active" data-market="ALL">全部</button>
+        <button type="button" data-market="TWSE">上市</button>
+        <button type="button" data-market="OTC">上櫃</button>
+      </div>
+      <div class="btn-group" id="window-toggle">
+        <button type="button" data-window="60">60日</button>
+        <button type="button" class="active" data-window="120">120日</button>
+        <button type="button" data-window="240">240日</button>
+      </div>
+      <div class="btn-group" id="metric-toggle">
+        <button type="button" data-metric="er">E(R)</button>
+        <button type="button" class="active" data-metric="alpha">α</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="scatter-chart" height="320"></canvas>
+    </div>
+    <p class="chart-hint" id="chart-hint">橫軸為β（系統性風險）、縱軸為α（年化超額報酬）。點一下圖上的點可跳到下方表格查看該股。</p>
+  </section>
+
+  <section class="chart-section">
+    <div class="chart-controls">
+      <input id="traj-search" type="text" placeholder="輸入股票代號查看走勢，例如 2330" autocomplete="off" value="2330">
+      <span class="traj-title" id="traj-title">台積電 (2330)</span>
+      <div class="btn-group" id="traj-window-toggle">
+        <button type="button" data-window="60">60日</button>
+        <button type="button" class="active" data-window="120">120日</button>
+        <button type="button" data-window="240">240日</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="traj-chart" height="320"></canvas>
+    </div>
+    <p class="chart-hint">與上方相同座標系（橫軸β、縱軸E(R)）。呈現該股最近60個交易日、每日的β/E(R)位置變化，顏色由淺到深代表時間由舊到新，最新一點特別放大。E(R)依CAPM公式 E(R)=Rf+β×(大盤年化報酬-Rf) 計算（Rf約1.5%）。</p>
+  </section>
+
+  <input id="search" type="text" placeholder="輸入股票代號或名稱，例如 2330 或 台積電" autocomplete="off">
+  <div class="table-wrap">
+    <table id="result-table">
+      <thead>
+        <tr>
+          <th data-key="code">代號</th>
+          <th data-key="name">名稱</th>
+          <th data-key="market">市場</th>
+          <th data-key="beta60">β(60日)</th>
+          <th data-key="alpha60">α(60日,年化)</th>
+          <th data-key="beta120">β(120日)</th>
+          <th data-key="alpha120">α(120日,年化)</th>
+          <th data-key="beta240">β(240日)</th>
+          <th data-key="alpha240">α(240日,年化)</th>
+        </tr>
+      </thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <p id="empty" class="hidden">沒有符合的股票</p>
+</main>
+
+<footer>
+  <p>僅供研究參考，不構成投資建議。資料每週二至週六台灣時間約11:30自動更新。</p>
+</footer>
+
+<script src="assets/chart.umd.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
