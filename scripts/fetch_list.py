@@ -74,8 +74,9 @@ def main() -> int:
 
     twse_rows = normalize(fetch_csv(URL_TWSE), "TWSE", ".TW")
     otc_rows = normalize(fetch_csv(URL_OTC), "OTC", ".TWO")
-    all_rows = twse_rows + otc_rows
-    all_rows.sort(key=lambda r: r["code"])
+    twse_rows.sort(key=lambda r: r["code"])
+    otc_rows.sort(key=lambda r: r["code"])
+    all_rows = twse_rows + otc_rows  # 先上市（依代號排序）、再上櫃（依代號排序），不要交錯
 
     report_diff(old_rows, all_rows)
 
