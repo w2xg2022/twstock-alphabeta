@@ -41,7 +41,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/stock_list.csv docs/data/alphabeta.json docs/data/alphabeta.csv docs/data/trajectory.json
           git diff --cached --quiet || git commit -m "chore: 自動更新 alpha/beta 資料 ${{ steps.data_date.outputs.date }}"
-          git push
+          for i in 1 2 3 4 5; do
+            git push && break
+            echo "push被拒絕，pull --rebase後重試 ($i/5)"
+            git pull --rebase origin main
+            sleep $((i * 5))
+          done
 
       - name: 發布當日 Release（alpha/beta CSV）
         env:
