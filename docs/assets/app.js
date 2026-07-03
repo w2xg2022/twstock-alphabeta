@@ -53,6 +53,16 @@
     return { min: min - pad, max: max + pad };
   }
 
+  function orangeGradient(n) {
+    const light = [253, 186, 116]; // 淺橘（時間較舊）
+    const dark = [124, 45, 18]; // 深橘褐（時間較新）
+    return Array.from({ length: n }, (_, i) => {
+      const t = n > 1 ? i / (n - 1) : 1;
+      const rgb = light.map((c, idx) => Math.round(c + (dark[idx] - c) * t));
+      return `rgb(${rgb.join(",")})`;
+    });
+  }
+
   function percentile(sorted, p) {
     const idx = (sorted.length - 1) * p;
     const lo = Math.floor(idx);
@@ -205,8 +215,15 @@
     tbody.appendChild(frag);
   }
 
+  const MARKET_ORDER = { TWSE: 0, OTC: 1 };
+
   function sortList(list) {
     return [...list].sort((a, b) => {
+      if (sortKey !== "market") {
+        const marketDiff = MARKET_ORDER[a.market] - MARKET_ORDER[b.market];
+        if (marketDiff !== 0) return marketDiff;
+      }
+
       const av = a[sortKey];
       const bv = b[sortKey];
       if (av === null || av === undefined) return 1;
@@ -468,6 +485,7 @@
 
     const weekly = sampleWeekly(points, 5);
     const weeklyTotal = weekly.length;
+    const weeklyColors = orangeGradient(weeklyTotal);
 
     const baseXRange = ranges[`beta${chartWindow}`];
     const baseYRange = ranges[`${chartMetric}${chartWindow}`];
@@ -491,10 +509,13 @@
             label: "每週大方向",
             data: weekly,
             showLine: true,
-            borderColor: "#d97706",
+            borderColor: weeklyColors[weeklyColors.length - 1],
+            segment: {
+              borderColor: (segCtx) => weeklyColors[segCtx.p1DataIndex] || weeklyColors[weeklyColors.length - 1],
+            },
             borderWidth: 2.5,
-            pointBackgroundColor: "#d97706",
-            pointBorderColor: "#92400e",
+            pointBackgroundColor: weeklyColors,
+            pointBorderColor: weeklyColors,
             pointRadius: (ctx2) => (ctx2.dataIndex === weeklyTotal - 1 ? 7 : 4),
             pointHoverRadius: 9,
           },
