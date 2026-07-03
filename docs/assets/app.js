@@ -290,8 +290,11 @@
       });
     }
 
-    const xRange = ranges[bKey];
-    const yRange = ranges[eKey];
+    const baseXRange = ranges[bKey];
+    const baseYRange = ranges[eKey];
+    const topCands = topQuadrantCandidates(bKey, eKey, chartMetric, 20);
+    const xRange = baseXRange ? extendRange(baseXRange, topCands.map((c) => c.beta)) : undefined;
+    const yRange = baseYRange ? extendRange(baseYRange, topCands.map((c) => c.value)) : undefined;
     const refHorizontal = metricRefLine(chartMetric);
 
     if (chart) chart.destroy();
@@ -347,25 +350,33 @@
 
   const TOP_LIST_WINDOW = "60";
 
-  function buildTopList() {
-    if (!topListBody) return;
-    const bKey = `beta${TOP_LIST_WINDOW}`;
-    const aKey = `alpha${TOP_LIST_WINDOW}`;
-
-    const candidates = stocks
+  function topQuadrantCandidates(bKey, eKey, metric, limit) {
+    const anchor = metric === "alpha" ? 0 : riskFreeRate;
+    return stocks
       .filter((s) => (chartMarket === "ALL" || s.market === chartMarket))
-      .filter((s) => s[bKey] !== null && s[bKey] !== undefined && s[aKey] !== null && s[aKey] !== undefined)
-      .filter((s) => s[bKey] >= 0 && s[bKey] < 1 && s[aKey] > 0)
+      .filter((s) => s[bKey] !== null && s[bKey] !== undefined && s[eKey] !== null && s[eKey] !== undefined)
+      .filter((s) => s[bKey] >= 0 && s[bKey] < 1 && s[eKey] > anchor)
       .map((s) => ({
         code: s.code,
         name: s.name,
         market: s.market,
         beta: s[bKey],
-        alpha: s[aKey],
-        dist: Math.hypot(1 - s[bKey], s[aKey]),
+        value: s[eKey],
+        dist: Math.hypot(1 - s[bKey], s[eKey] - anchor),
       }))
       .sort((a, b) => b.dist - a.dist)
-      .slice(0, 20);
+      .slice(0, limit);
+  }
+
+  function buildTopList() {
+    if (!topListBody) return;
+    const bKey = `beta${TOP_LIST_WINDOW}`;
+    const aKey = `alpha${TOP_LIST_WINDOW}`;
+
+    const candidates = topQuadrantCandidates(bKey, aKey, "alpha", 20).map((c) => ({
+      ...c,
+      alpha: c.value,
+    }));
 
     topListBody.innerHTML = "";
     if (candidates.length === 0) {
