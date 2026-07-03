@@ -53,8 +53,8 @@
   </section>
 
   <section class="chart-section">
-    <h2 class="top-list-title" id="top-list-title">低β、高α精選股（Top 20，120日）</h2>
-    <p class="chart-hint" id="top-list-hint">天數窗口跟隨上方主圖的60/120/240日切換，先篩選 β≥0 且 β&lt;0.5（低系統性風險）、α&gt;0 的個股，再依α由高到低排序。市場篩選跟隨上方「全部/上市/上櫃」。</p>
+    <h2 class="top-list-title" id="top-list-title">精選股</h2>
+    <p class="chart-hint" id="top-list-hint">先篩選 β(60日)≥0 且 &lt;0.5（低系統性風險）、α(60日)&gt;0（近期確實在漲）的個股，再依「α(60日) − α(240日)」由大到小排序——這個值越大代表近期漲勢相對過去一年明顯加速，較接近「剛起漲」而非已經漲多的老多頭股。市場篩選跟隨上方「全部/上市/上櫃」。</p>
     <div class="table-wrap">
       <table id="top-list-table">
         <thead>
@@ -63,14 +63,14 @@
             <th>代號</th>
             <th>名稱</th>
             <th>市場</th>
-            <th>β</th>
-            <th>α(年化)</th>
+            <th>β(60日)</th>
+            <th>α(60日,年化)</th>
           </tr>
         </thead>
         <tbody id="top-list-body"></tbody>
       </table>
     </div>
-    <p id="top-list-empty" class="hidden">目前窗口下沒有符合條件的個股</p>
+    <p id="top-list-empty" class="hidden">目前沒有符合條件的個股</p>
   </section>
 
   <input id="search" type="text" placeholder="輸入股票代號或名稱，例如 2330 或 台積電" autocomplete="off">

@@ -370,16 +370,30 @@
       .slice(0, limit);
   }
 
+  function topAccelCandidates(limit) {
+    return stocks
+      .filter((s) => (chartMarket === "ALL" || s.market === chartMarket))
+      .filter((s) => s.beta60 !== null && s.beta60 !== undefined &&
+        s.alpha60 !== null && s.alpha60 !== undefined &&
+        s.alpha240 !== null && s.alpha240 !== undefined)
+      .filter((s) => s.beta60 >= 0 && s.beta60 < TOP_LIST_BETA_MAX && s.alpha60 > 0)
+      .map((s) => ({
+        code: s.code,
+        name: s.name,
+        market: s.market,
+        beta: s.beta60,
+        alpha: s.alpha60,
+        accel: s.alpha60 - s.alpha240,
+      }))
+      .sort((a, b) => b.accel - a.accel)
+      .slice(0, limit);
+  }
+
   function buildTopList() {
     if (!topListBody) return;
-    if (topListTitle) topListTitle.textContent = `低β、高α精選股（Top 20，${chartWindow}日）`;
-    const bKey = `beta${chartWindow}`;
-    const aKey = `alpha${chartWindow}`;
+    if (topListTitle) topListTitle.textContent = "精選股";
 
-    const candidates = topQuadrantCandidates(bKey, aKey, "alpha", 20).map((c) => ({
-      ...c,
-      alpha: c.value,
-    }));
+    const candidates = topAccelCandidates(30);
 
     topListBody.innerHTML = "";
     if (candidates.length === 0) {
