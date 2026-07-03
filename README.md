@@ -2,7 +2,7 @@
 
 台股（上市、上櫃）個股 alpha / beta 資料庫，資料來自 [yfinance](https://github.com/ranaroussi/yfinance)，採用還原權息價計算。
 
-線上查詢：<a href="https://w2xg2022.github.io/twstock-alphabeta/" target="_blank" rel="noopener noreferrer"><strong>https://w2xg2022.github.io/twstock-alphabeta/</strong></a>
+線上查詢：**https://w2xg2022.github.io/twstock-alphabeta/**（GitHub 會強制在同分頁開啟連結；若想開新分頁，可按住 Ctrl 點擊連結，Mac 按住 ⌘ 點擊；按住 Shift 點擊則開新視窗）
 
 下載當日完整資料（CSV）：**[Releases](https://github.com/w2xg2022/twstock-alphabeta/releases)**，每個交易日發布一份 `alphabeta_YYYYMMDD.csv`（全部個股 60/120/240 日 α、β、E(R)）。
 
