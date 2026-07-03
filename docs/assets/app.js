@@ -350,21 +350,22 @@
 
   const TOP_LIST_WINDOW = "60";
 
+  const TOP_LIST_BETA_MAX = 0.5;
+
   function topQuadrantCandidates(bKey, eKey, metric, limit) {
     const anchor = metric === "alpha" ? 0 : riskFreeRate;
     return stocks
       .filter((s) => (chartMarket === "ALL" || s.market === chartMarket))
       .filter((s) => s[bKey] !== null && s[bKey] !== undefined && s[eKey] !== null && s[eKey] !== undefined)
-      .filter((s) => s[bKey] >= 0 && s[bKey] < 1 && s[eKey] > anchor)
+      .filter((s) => s[bKey] >= 0 && s[bKey] < TOP_LIST_BETA_MAX && s[eKey] > anchor)
       .map((s) => ({
         code: s.code,
         name: s.name,
         market: s.market,
         beta: s[bKey],
         value: s[eKey],
-        dist: Math.hypot(1 - s[bKey], s[eKey] - anchor),
       }))
-      .sort((a, b) => b.dist - a.dist)
+      .sort((a, b) => b.value - a.value)
       .slice(0, limit);
   }
 
