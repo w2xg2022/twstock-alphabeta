@@ -68,15 +68,34 @@ def report_diff(old_rows: dict, new_rows: list[dict]) -> None:
         print("清單與前次相同，無新增或下市")
 
 
+def fetch_market(url: str, market: str, suffix: str, fallback: list[dict]) -> list[dict]:
+    """抓某個市場的清單；下載失敗或回傳空清單時，改用舊清單頂替，不讓整批被清空"""
+    try:
+        rows = normalize(fetch_csv(url), market, suffix)
+    except Exception as e:  # noqa: BLE001
+        print(f"警告: {market}清單下載失敗，改用舊清單({len(fallback)}筆): {e}", file=sys.stderr)
+        return list(fallback)
+    if not rows:
+        print(f"警告: {market}清單回傳是空的，改用舊清單({len(fallback)}筆)", file=sys.stderr)
+        return list(fallback)
+    return rows
+
+
 def main() -> int:
     out_path = "data/stock_list.csv"
     old_rows = load_previous(out_path)
+    old_twse = [r for r in old_rows.values() if r["market"] == "TWSE"]
+    old_otc = [r for r in old_rows.values() if r["market"] == "OTC"]
 
-    twse_rows = normalize(fetch_csv(URL_TWSE), "TWSE", ".TW")
-    otc_rows = normalize(fetch_csv(URL_OTC), "OTC", ".TWO")
+    twse_rows = fetch_market(URL_TWSE, "TWSE", ".TW", old_twse)
+    otc_rows = fetch_market(URL_OTC, "OTC", ".TWO", old_otc)
     twse_rows.sort(key=lambda r: r["code"])
     otc_rows.sort(key=lambda r: r["code"])
     all_rows = twse_rows + otc_rows  # 先上市（依代號排序）、再上櫃（依代號排序），不要交錯
+
+    if not all_rows:
+        print("錯誤: 上市、上櫃清單都是空的，且無舊清單可用，保留原檔不覆寫", file=sys.stderr)
+        return 1
 
     report_diff(old_rows, all_rows)
 
