@@ -2,6 +2,7 @@
 """下載台股還原(權息調整後)股價，計算60/120/240交易日的alpha/beta，輸出 docs/data/alphabeta.json"""
 import csv
 import json
+import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -83,6 +84,21 @@ def fetch_finmind_index(data_id: str, start_date: str, retries: int = 3) -> pd.S
             time.sleep(3 * (attempt + 1))
     print(f"警告: FinMind下載失敗 {data_id}: {last_err}", file=sys.stderr)
     return pd.Series(dtype=float)
+
+
+def existing_data_date(path: str = "docs/data/alphabeta.json") -> str | None:
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("data_date")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def latest_benchmark_date(bench_ret: dict) -> str:
+    dates = [s.index[-1].strftime("%Y-%m-%d") for s in bench_ret.values() if not s.empty]
+    return max(dates) if dates else ""
 
 
 def chunked(seq: list, size: int):
@@ -176,6 +192,13 @@ def main() -> int:
             print(f"警告: 大盤基準 {data_id} 下載失敗", file=sys.stderr)
             bench_ret[market] = pd.Series(dtype=float)
             trajectory_dates[market] = []
+
+    force = "--force" in sys.argv
+    expected_date = latest_benchmark_date(bench_ret)
+    prev_date = existing_data_date()
+    if not force and expected_date and expected_date == prev_date:
+        print(f"大盤基準最新日期({expected_date})跟現有資料相同，略過重算(如需強制重算可加 --force)")
+        return 0
 
     results = []
     trajectories = {}
