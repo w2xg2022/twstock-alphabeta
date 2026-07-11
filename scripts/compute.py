@@ -15,9 +15,13 @@ import yfinance as yf
 WINDOWS = (60, 120, 240)
 PERIOD = "18mo"  # 240個交易日約需11~12個月，多留緩衝
 CHUNK_SIZE = 100
-# 大盤基準改用FinMind(TaiwanStockPrice)，因為yfinance的^TWII/^TWOII指數資料常常落後或不完整
+# 大盤基準改用FinMind，因為yfinance的^TWII/^TWOII指數資料常常落後或不完整
 # (實測^TWOII常卡在好幾天前，個股本身資料是新的)；個股價格仍用yfinance還原價
+# 用「報酬指數」(TaiwanStockTotalReturnIndex)而非單純價格指數(TaiwanStockPrice)，
+# 因為個股那邊yfinance auto_adjust=True已經是還原股息後的類報酬率價格，
+# 大盤基準也要用含息的報酬指數才能一致比較，不然α會因為個股含息、大盤不含息而系統性偏高
 BENCHMARKS = {"TWSE": "TAIEX", "OTC": "TPEx"}
+FINMIND_DATASET = "TaiwanStockTotalReturnIndex"
 FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
 ANNUALIZE_DAYS = 252
 RISK_FREE_RATE = 0.015  # 約略無風險利率，CAPM期望報酬率用
@@ -63,13 +67,13 @@ def fetch_close(tickers: list[str], retries: int = 3) -> pd.DataFrame:
 
 
 def fetch_finmind_index(data_id: str, start_date: str, retries: int = 3) -> pd.Series:
-    """從FinMind抓大盤指數收盤價(TAIEX=加權指數, TPEx=櫃買指數)，回傳Series(index=date)"""
+    """從FinMind抓大盤報酬指數(TAIEX=加權報酬指數, TPEx=櫃買報酬指數，含息)，回傳Series(index=date)"""
     last_err = None
     for attempt in range(retries):
         try:
             resp = requests.get(
                 FINMIND_URL,
-                params={"dataset": "TaiwanStockPrice", "data_id": data_id, "start_date": start_date},
+                params={"dataset": FINMIND_DATASET, "data_id": data_id, "start_date": start_date},
                 timeout=30,
             )
             resp.raise_for_status()
@@ -78,7 +82,7 @@ def fetch_finmind_index(data_id: str, start_date: str, retries: int = 3) -> pd.S
                 raise RuntimeError("FinMind回傳無資料")
             df = pd.DataFrame(data)
             df["date"] = pd.to_datetime(df["date"])
-            return df.set_index("date")["close"].sort_index()
+            return df.set_index("date")["price"].sort_index()
         except Exception as e:  # noqa: BLE001
             last_err = e
             time.sleep(3 * (attempt + 1))
