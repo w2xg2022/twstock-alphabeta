@@ -412,9 +412,9 @@
 
   function buildTopList() {
     if (!topListBody) return;
-    if (topListTitle) topListTitle.textContent = "精選股";
+    if (topListTitle) topListTitle.textContent = "篩選清單";
     if (topListHint) {
-      topListHint.textContent = `先篩選 β(60日)≥0 且 <0.5（低系統性風險）、α(60日)>0（近期確實在漲）的個股，再依「α(60日) − α(${accelBase}日)」由大到小排序——這個值越大代表近期漲勢相對過去${accelBase === "240" ? "一年" : "半年"}明顯加速，較接近「剛起漲」而非已經漲多的老多頭股。市場篩選跟隨上方「全部/上市/上櫃」。`;
+      topListHint.textContent = `先篩選 β(60日)≥0 且 <0.5（低系統性風險）、α(60日)>0 的個股，再依「α(60日) − α(${accelBase}日)」由大到小排序。市場篩選跟隨上方「全部/上市/上櫃」。`;
     }
 
     const candidates = topAccelCandidates(30, accelBase);
